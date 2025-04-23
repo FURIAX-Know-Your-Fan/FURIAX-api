@@ -1,0 +1,30 @@
+services:
+  furiax-api:
+    container_name: furiax-api
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    env_file:
+      - .env.dev
+    ports:
+      - ${API_PORT}:${API_PORT}
+    volumes:
+      - .:/app
+    depends_on:
+      - furiax-db
+
+  furiax-db:
+    container_name: furiax-db
+    image: mongo
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+    env_file:
+      - .env.dev
+
+volumes:
+  mongo-data:
