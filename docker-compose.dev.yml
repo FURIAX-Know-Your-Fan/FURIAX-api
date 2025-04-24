@@ -41,6 +41,15 @@ services:
     depends_on:
       - furiax-db
 
+  flowise:
+    container_name: furiax-flowise
+    image: flowiseai/flowise:2.2.7
+    ports:
+      - 3010:3000
+    environment:
+      - FLOWISE_USERNAME=${FLOWISE_USERNAME}
+      - FLOWISE_PASSWORD=${FLOWISE_PASSWORD}
+
 
 volumes:
   mongo-data:
