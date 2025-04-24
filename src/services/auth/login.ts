@@ -50,6 +50,8 @@ export const login = async (req: Request, res: Response) => {
         name: user.name,
         username: user.username,
         role: user.role,
+        enthusiast_level: user.enthusiast_level,
+        twitter_account: user.twitter_account,
       },
     });
 };

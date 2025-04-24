@@ -37,6 +37,11 @@ const UserSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    enthusiast_level: {
+      type: String,
+      enum: ["Não Medido", "Casual", "Engajado", "Hardcore"],
+      default: "Não Medido",
+    },
   },
   {
     collection: "users",
