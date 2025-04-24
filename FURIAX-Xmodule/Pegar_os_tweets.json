@@ -1,0 +1,510 @@
+{
+  "name": "Pegar os tweets",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -340,
+        -320
+      ],
+      "id": "c3fb02a2-ee39-45ed-bea6-bb23ae71ce69",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "collection": "users",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1.1,
+      "position": [
+        -100,
+        -320
+      ],
+      "id": "c798b885-164c-45ca-92ef-2e8990d9d8e6",
+      "name": "MongoDB1",
+      "credentials": {
+        "mongoDb": {
+          "id": "GJLgG3aKlpBYbLF3",
+          "name": "MongoDB account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "51d242b7-d43b-4913-ab88-a67709a82ee6",
+              "name": "_id",
+              "value": "={{ $('MongoDB1').item.json._id }}",
+              "type": "string"
+            },
+            {
+              "id": "a66a6bae-ab51-4e02-a7b2-1c179a338445",
+              "name": "twitter_account",
+              "value": "={{ $json.twitter_account }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        360,
+        -220
+      ],
+      "id": "a53a6fa6-0f17-4ddc-9210-590cdf788ad0",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://furiax-xmodule:8000/tweets",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "screen_name",
+              "value": "={{ $('Edit Fields').item.json.twitter_account }}"
+            },
+            {
+              "name": "local_id",
+              "value": "={{ $('Edit Fields').item.json._id }}"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": false
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        360,
+        -420
+      ],
+      "id": "af001028-de3d-4c70-ae71-39ebcdc9655a",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "batchSize": 1000,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        100,
+        -300
+      ],
+      "id": "d84694e8-f976-42f6-93ad-8fdd7d26815b",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Passe por cada elemento desta lista {{ $json.tweets }} e me de um resumo dos assusntos trados",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        1440,
+        -460
+      ],
+      "id": "edfdbc58-40ab-4ca5-aa7b-0c9c6596f5ed",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "deepseek-r1:1.5b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        1460,
+        -100
+      ],
+      "id": "1dcf6787-57f9-4f95-bc16-99be3e55a278",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "TB7yG0B4oE2lIGHX",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        500,
+        180
+      ],
+      "id": "6318d541-d303-4380-b52e-2df1b23f234d",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "collection": "users",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        180
+      ],
+      "id": "5650d799-0e68-43f5-860a-0b433fdd6a1a",
+      "name": "MongoDB",
+      "credentials": {
+        "mongoDb": {
+          "id": "GJLgG3aKlpBYbLF3",
+          "name": "MongoDB account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        940,
+        180
+      ],
+      "id": "313c58f1-e5f7-498e-99ae-90798af279d9",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "batchSize": 2,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1160,
+        180
+      ],
+      "id": "ecc540ed-5868-43a8-a909-bf8bdce52bd5",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "collection": "tweets",
+        "options": {},
+        "query": "={\n  \"user_id\": \"{{ $json._id }}\"\n} "
+      },
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1.1,
+      "position": [
+        1380,
+        280
+      ],
+      "id": "eaec4775-8880-4fd0-abd5-50e53af72078",
+      "name": "MongoDB2",
+      "credentials": {
+        "mongoDb": {
+          "id": "YcmxOWMqMaEgndEK",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return {tweets: $input.first().json.tweets, size: $input.first().json.tweets.length}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        280
+      ],
+      "id": "8a1817dd-c9fc-48c7-952d-451c8fb6ff6b",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "model": "gemma3:1b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        2260,
+        640
+      ],
+      "id": "af83f683-2ddf-4405-9fcf-709fc40f5af7",
+      "name": "Ollama Chat Model2",
+      "credentials": {
+        "ollamaApi": {
+          "id": "TB7yG0B4oE2lIGHX",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const tweets = $input.first().json.tweets;\nconst result = [];\n\nfor (const tweet of tweets) {\n  result.push({\n    json: {\n      text: tweet.text,\n      created_at: tweet.created_at,\n      retweet_count: tweet.retweet_count,\n      favorite_count: tweet.favorite_count,\n    }\n  });\n}\n\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1820,
+        280
+      ],
+      "id": "80e94db0-c4e0-4be0-b096-8302d841a532",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "batchSize": "=50",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2040,
+        280
+      ],
+      "id": "194f95c0-3b49-41b9-ad75-727a9e41d0cc",
+      "name": "Loop Over Items2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=O que fala este texto:  {{ $json.text }} ",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        2260,
+        380
+      ],
+      "id": "c8429a06-2a99-42c4-9966-197573ad5fb5",
+      "name": "AI Agent1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "MongoDB1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MongoDB1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        []
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "MongoDB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MongoDB": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "MongoDB2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MongoDB2": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "95906b08-710f-4910-bcab-d37a89b1015a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8ff27e98a88cc36f8f038171bad710415c502c22c9afa15da04922ed398bf20d"
+  },
+  "id": "qjefJC4ab9Y00iuC",
+  "tags": []
+}

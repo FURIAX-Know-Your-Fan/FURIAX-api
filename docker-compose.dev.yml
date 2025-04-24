@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   furiax-api:
     container_name: furiax-api
@@ -12,6 +14,8 @@ services:
       - .:/app
     depends_on:
       - furiax-db
+    networks:
+      - furiax-network
 
   furiax-db:
     container_name: furiax-db
@@ -25,6 +29,8 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
     env_file:
       - .env.dev
+    networks:
+      - furiax-network
   
   mongo-express:
     container_name: mongo-express
@@ -40,6 +46,8 @@ services:
       - .env
     depends_on:
       - furiax-db
+    networks:
+      - furiax-network
 
   flowise:
     container_name: furiax-flowise
@@ -49,7 +57,49 @@ services:
     environment:
       - FLOWISE_USERNAME=${FLOWISE_USERNAME}
       - FLOWISE_PASSWORD=${FLOWISE_PASSWORD}
+    networks:
+      - furiax-network
 
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=admin123
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - TZ=America/Sao_Paulo
+    restart: unless-stopped
+    networks:
+      - furiax-network
+
+  furiax-xmodule:
+    container_name: furiax-xmodule
+    build: 
+      context: ./FURIAX-Xmodule
+      dockerfile: Dockerfile
+    volumes:
+      - ./FURIAX-Xmodule:/app
+    ports:
+      - 8000:8000
+    depends_on:
+      - furiax-api
+      - furiax-db
+    env_file:
+      - .env
+    networks:
+      - furiax-network
 
 volumes:
+  n8n_data:
   mongo-data:
+
+networks:
+  furiax-network:
+    driver: bridge

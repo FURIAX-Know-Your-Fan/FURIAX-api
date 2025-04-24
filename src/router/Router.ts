@@ -1,5 +1,6 @@
 import express from "express";
 import user_router from "./user/user_router";
+import n8n_router from "./n8n/n8n_router";
 
 const router = express.Router();
 
@@ -8,5 +9,6 @@ router.get("/", (req, res) => {
 });
 
 router.use("/user", user_router);
+router.use("/n8n", n8n_router);
 
 export default router;
