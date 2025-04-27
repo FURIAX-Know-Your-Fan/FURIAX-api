@@ -42,6 +42,10 @@ const UserSchema = new Schema(
       enum: ["Não Medido", "Casual", "Engajado", "Hardcore"],
       default: "Não Medido",
     },
+    description: {
+      type: String,
+      default: "",
+    },
   },
   {
     collection: "users",

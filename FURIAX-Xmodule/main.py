@@ -140,7 +140,7 @@ async def generate_users_score():
             # logger.info(f"Tweet: {tweet['text']}")
             user_description_input += f"*{tweet['text']}*\n\n"
 
-        user_description_input += "Forneça uma breve descrição sobre o quão fã o usuário é do time de Esports brasileiro FURIA, com base nos tweets abaixo. Se não houver tweets sobre a FURIA, descreva que o usuário não é fã do time. Ao final, forneça a classificação de envolvimento com o time no formato _classificacao:<classificacao>, usando uma das seguintes categorias: Não Medido, Casual, Engajado, Hardcore. Os tweets são delimitados por * *"
+        user_description_input += 'Forneça uma breve descrição sobre o quão fã o usuário é do time de Esports brasileiro FURIA, com base nos tweets abaixo. Se não houver tweets sobre a FURIA, descreva que o usuário não é fã do time. Ao final, forneça a classificação de envolvimento com o time, usando uma das seguintes categorias: Não Medido, Casual, Engajado, Hardcore. Os tweets são delimitados por * *. Responda no formato JSON com as chaves description e enthusiast_level: {"description": "breve descrição sobre o fã do time FURIA", "enthusiast_level": "classificação de envolvimento'
 
         try:
             # Enviando dados no formato JSON
@@ -160,13 +160,19 @@ async def generate_users_score():
             
             # Verificando a resposta da API
             if response.status_code == 200:
-                classificacao = re.search(r'_classificacao:\s*([A-Za-zÀ-ÿ\s]+)_', response.json()["response"])
-                logger.info(f"Classificação: {classificacao.group(1) if classificacao else None}")
+                json_text_cleaned = response.json()["response"].strip('```json\n').strip('```')
+                data = json.loads(json_text_cleaned)
 
+                
                 user_collection.update_one(
                     {"_id": user["_id"]},
-                    {"$set": {"description": response.json()["response"]}, "$set": {"enthusiast_level": classificacao.group(1) if classificacao else None}},
+                    {"$set": {
+                        "description": data["description"],
+                        "enthusiast_level": data["enthusiast_level"]
+                    }}
                 )
+
+                logger.info(f"Descrição e nível de entusiasta atualizados para o usuário {user['twitter_account']}")
             else:
                 logger.error(f"Erro ao chamar a API. Status code: {response.status_code}, Resposta: {response.text}")
 
