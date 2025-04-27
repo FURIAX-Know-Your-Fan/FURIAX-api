@@ -52,6 +52,7 @@ export const login = async (req: Request, res: Response) => {
         role: user.role,
         enthusiast_level: user.enthusiast_level,
         twitter_account: user.twitter_account,
+        description: user.description,
       },
     });
 };
