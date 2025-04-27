@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from pathlib import Path
+from bson import ObjectId
 import twikit
 import os
 import asyncio
@@ -9,6 +10,9 @@ from pymongo import MongoClient
 import logging
 from pydantic import BaseModel
 from fastapi import Body
+from motor.motor_asyncio import AsyncIOMotorClient
+import requests
+import re
 
 
 logging.basicConfig(level=logging.INFO)
@@ -23,9 +27,10 @@ mongo_url = os.getenv("MONGO_URL")
 logger.info(f"MONGO_URL: {mongo_url}")  # Usando logger para imprimir
 
 try: 
-    mongo_client = MongoClient(mongo_url)
-    db = mongo_client["tweets"]
-    collection = db["tweets"]
+    mongo_client = AsyncIOMotorClient(mongo_url)
+    db = mongo_client["test"]
+    collection = db["user_tweets"]
+    user_collection = db["users"]
 
     logger.info("MongoDB connection established")
 except Exception as e:
@@ -66,11 +71,17 @@ async def get_user_tweets(data: TweetRequest):
     screen_name = data.screen_name
     local_id = data.local_id
 
+    if not screen_name or not local_id:
+        logger.error("screen_name and local_id are required")
+        return {"error": "screen_name and local_id are required"}
+        
     user = await client.get_user_by_screen_name(screen_name)
     user_id = user.id
 
     tweets = await client.get_user_tweets(user_id=user_id, tweet_type="Tweets", count=10)
     tweets_data = []
+
+    refered_user = user_collection.find_one({"_id": ObjectId(local_id)})
 
     for tweet in tweets:
         tweet_data = {
@@ -83,17 +94,18 @@ async def get_user_tweets(data: TweetRequest):
         tweets_data.append(tweet_data)
 
     mongo_doc = {
-        "user_id": local_id,
         "screen_name": screen_name,
         "tweets": tweets_data,
         "updated_at": datetime.utcnow().isoformat()
     }
 
     try:
+        # Utilize upsert diretamente, o que é adequado para adicionar ou atualizar o documento.
         collection.update_one(
-            {"user_id": local_id},
+            {"user_id": ObjectId(local_id)},
             {"$set": mongo_doc},
-            upsert=True
+             # Atualiza o documento se já existir
+            upsert=True  # Se o usuário não existir, cria um novo documento
         )
         logger.info(f"Tweets salvos em um único documento para o usuário {screen_name}")
     except Exception as e:
@@ -103,6 +115,65 @@ async def get_user_tweets(data: TweetRequest):
     with open(f"tweets_{screen_name}.json", 'w', encoding='utf-8') as f:
         json.dump(mongo_doc, f, ensure_ascii=False, indent=4)
 
-    return {"message": "Tweets salvos com sucesso", "count": len(tweets_data)}
+    return {"message": "Tweets salvos com sucesso", "count": len(tweets_data), "tweets": tweets_data}
 
 
+@app.get("/generate/user/score")
+async def generate_users_score():
+    users = await user_collection.find().to_list()
+    
+    for user in users:
+        if not user["twitter_account"]:
+            logger.warning(f"Usuário {user['_id']} não possui conta do Twitter")
+            continue
+
+        logger.info(f"Calculando score para o usuário {user['twitter_account']}")
+
+        tweets = await collection.find_one({"user_id": user["_id"]})
+        if not tweets:
+            logger.warning(f"Nenhum tweet encontrado para o usuário {user['twitter_account']}")
+            continue
+        
+        user_description_input = "Estes são os tweets do usuário:\n\n"
+
+        for tweet in tweets["tweets"]:
+            # logger.info(f"Tweet: {tweet['text']}")
+            user_description_input += f"*{tweet['text']}*\n\n"
+
+        user_description_input += "Forneça uma breve descrição sobre o quão fã o usuário é do time de Esports brasileiro FURIA, com base nos tweets abaixo. Se não houver tweets sobre a FURIA, descreva que o usuário não é fã do time. Ao final, forneça a classificação de envolvimento com o time no formato _classificacao:<classificacao>, usando uma das seguintes categorias: Não Medido, Casual, Engajado, Hardcore. Os tweets são delimitados por * *"
+
+        try:
+            # Enviando dados no formato JSON
+            payload = {
+                "model": "gemma3:4b",
+                "prompt": user_description_input,
+                "stream": False
+            }
+            headers = {"Content-Type": "application/json"}  # Garantindo que o conteúdo seja JSON
+            
+            # Requisição POST para a API do Ollama
+            response = requests.post(
+                "https://d232-2804-14c-65d6-419e-00-1b94.ngrok-free.app/api/generate",
+                data=json.dumps(payload),  # Convertendo o payload para JSON
+                headers=headers
+            )
+            
+            # Verificando a resposta da API
+            if response.status_code == 200:
+                classificacao = re.search(r'_classificacao:\s*([A-Za-zÀ-ÿ\s]+)_', response.json()["response"])
+                logger.info(f"Classificação: {classificacao.group(1) if classificacao else None}")
+
+                user_collection.update_one(
+                    {"_id": user["_id"]},
+                    {"$set": {"description": response.json()["response"]}, "$set": {"enthusiast_level": classificacao.group(1) if classificacao else None}},
+                )
+            else:
+                logger.error(f"Erro ao chamar a API. Status code: {response.status_code}, Resposta: {response.text}")
+
+        except requests.exceptions.RequestException as e:
+            # Capturando exceções relacionadas a requisições
+            logger.error(f"Erro ao gerar descrição para o usuário {user['twitter_account']}: {e}")
+
+    return {"message": "Scores gerados com sucesso"}
+        
+        
