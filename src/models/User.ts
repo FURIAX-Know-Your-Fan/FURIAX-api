@@ -16,6 +16,18 @@ const UserSchema = new Schema(
       required: true,
       unique: true,
     },
+    adress: {
+      type: String,
+      required: true,
+    },
+    cpf: {
+      type: String,
+      required: true,
+    },
+    interests: {
+      type: [String],
+      required: false,
+    },
     password: {
       type: String,
       required: true,
