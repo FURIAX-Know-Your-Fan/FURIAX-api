@@ -49,16 +49,16 @@ services:
     networks:
       - furiax-network
 
-  flowise:
-    container_name: furiax-flowise
-    image: flowiseai/flowise:2.2.7
-    ports:
-      - 3010:3000
-    environment:
-      - FLOWISE_USERNAME=${FLOWISE_USERNAME}
-      - FLOWISE_PASSWORD=${FLOWISE_PASSWORD}
-    networks:
-      - furiax-network
+  # flowise:
+  #   container_name: furiax-flowise
+  #   image: flowiseai/flowise:2.2.7
+  #   ports:
+  #     - 3010:3000
+  #   environment:
+  #     - FLOWISE_USERNAME=${FLOWISE_USERNAME}
+  #     - FLOWISE_PASSWORD=${FLOWISE_PASSWORD}
+  #   networks:
+  #     - furiax-network
 
   n8n:
     image: n8nio/n8n
