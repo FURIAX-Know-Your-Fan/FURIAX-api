@@ -17,8 +17,30 @@ const UserSchema = new Schema(
       unique: true,
     },
     adress: {
-      type: String,
-      required: true,
+      cep: {
+        type: String,
+        required: true,
+      },
+      city: {
+        type: String,
+        required: true,
+      },
+      street: {
+        type: String,
+        required: true,
+      },
+      state: {
+        type: String,
+        required: true,
+      },
+      complement: {
+        type: String,
+        required: true,
+      },
+      number: {
+        type: String,
+        required: true,
+      },
     },
     cpf: {
       type: String,
@@ -27,6 +49,7 @@ const UserSchema = new Schema(
     interests: {
       type: [String],
       required: false,
+      default: [],
     },
     password: {
       type: String,
@@ -57,6 +80,10 @@ const UserSchema = new Schema(
     description: {
       type: String,
       default: "",
+    },
+    answered_questions: {
+      type: Boolean,
+      default: false,
     },
   },
   {

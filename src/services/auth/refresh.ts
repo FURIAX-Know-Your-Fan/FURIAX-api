@@ -57,6 +57,8 @@ export const refresh = async (req: Request, res: Response) => {
         enthusiast_level: user.enthusiast_level,
         twitter_account: user.twitter_account,
         description: user.description,
+        answered_questions: user.answered_questions,
+        interests: user.interests,
       },
     });
 };

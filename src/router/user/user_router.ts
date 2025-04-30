@@ -11,6 +11,7 @@ import { validate_token } from "../../middlewares/jwt/validate_token";
 import { like_post } from "../../services/user/posts/like_post";
 import { get_post } from "../../services/user/posts/get_post";
 import { comment_post } from "../../services/user/posts/comment_post";
+import { answer_interests } from "../../services/user/answer_interests";
 
 const user_router = express.Router();
 
@@ -33,5 +34,8 @@ user_router.get("/posts/:post_id", validate_token, get_post);
 
 // comments
 user_router.post("/post/comment/:post_id", validate_token, comment_post);
+
+// interests
+user_router.post("/answer/interests", validate_token, answer_interests);
 
 export default user_router;

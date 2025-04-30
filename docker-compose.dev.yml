@@ -96,6 +96,16 @@ services:
     networks:
       - furiax-network
 
+  furiax-document-validation:
+    container_name: furiax-document-validation
+    build:
+      context: ./document-validation
+      dockerfile: Dockerfile
+    ports:
+      - 8002:8002
+    volumes:
+      - ./document-validation:/app
+
 volumes:
   n8n_data:
   mongo-data:

@@ -4,8 +4,35 @@ import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 export const register = async (req: Request, res: Response) => {
-  const { username, name, email, password } = req.body;
-  if (!username || !name || !email || !password) {
+  const {
+    username,
+    name,
+    email,
+    password,
+    city,
+    street,
+    cep,
+    number,
+    state,
+    cpf,
+    complement,
+  } = req.body;
+
+  console.log(req.body);
+
+  if (
+    !username ||
+    !name ||
+    !email ||
+    !password ||
+    !city ||
+    !street ||
+    !cep ||
+    !number ||
+    !state ||
+    !cpf ||
+    !complement
+  ) {
     res.status(400).json({ message: "Todos os campos devem ser preenchidos" });
     return;
   }
@@ -28,6 +55,15 @@ export const register = async (req: Request, res: Response) => {
     name,
     email,
     password: hashed_password,
+    adress: {
+      city,
+      street,
+      cep,
+      number,
+      state,
+      complement,
+    },
+    cpf,
   });
 
   if (!new_user) {
@@ -39,8 +75,8 @@ export const register = async (req: Request, res: Response) => {
     { id: new_user._id, name: new_user.name, email: new_user.email },
     process.env.JWT_REGISTER_SECRET as string,
     {
-      // 5 min
-      expiresIn: "5m",
+      // 30 min
+      expiresIn: "30m",
     }
   );
 
