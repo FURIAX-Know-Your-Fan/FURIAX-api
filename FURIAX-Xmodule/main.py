@@ -205,7 +205,7 @@ async def generate_users_score():
             
             # Requisição POST para a API do Ollama
             response = requests.post(
-                "https://ab83-2804-14c-65d6-419e-00-1b94.ngrok-free.app/api/generate",
+                "https://8069-2804-14c-65d6-419e-00-1b94.ngrok-free.app/api/generate",
                 data=json.dumps(payload),  # Convertendo o payload para JSON
                 headers=headers
             )
