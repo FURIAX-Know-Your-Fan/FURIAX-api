@@ -67,6 +67,19 @@ const UserSchema = new Schema(
     twitter_account: {
       type: String,
       required: false,
+      default: "",
+    },
+    steam_account: {
+      vanity_url: {
+        type: String,
+        required: false,
+        default: "",
+      },
+      steam_id: {
+        type: String,
+        required: false,
+        default: "",
+      },
     },
     accepted_terms: {
       type: Boolean,

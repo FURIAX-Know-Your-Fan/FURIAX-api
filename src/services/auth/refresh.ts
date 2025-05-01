@@ -59,6 +59,7 @@ export const refresh = async (req: Request, res: Response) => {
         description: user.description,
         answered_questions: user.answered_questions,
         interests: user.interests,
+        steam_account: user.steam_account,
       },
     });
 };

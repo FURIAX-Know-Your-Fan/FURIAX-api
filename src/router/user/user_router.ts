@@ -12,6 +12,9 @@ import { like_post } from "../../services/user/posts/like_post";
 import { get_post } from "../../services/user/posts/get_post";
 import { comment_post } from "../../services/user/posts/comment_post";
 import { answer_interests } from "../../services/user/answer_interests";
+import { link_twitter } from "../../services/user/link_twitter";
+import { link_steam } from "../../services/user/link_steam";
+import { get_steam_stats } from "../../services/user/steam/get_steam_status";
 
 const user_router = express.Router();
 
@@ -37,5 +40,12 @@ user_router.post("/post/comment/:post_id", validate_token, comment_post);
 
 // interests
 user_router.post("/answer/interests", validate_token, answer_interests);
+
+// link accounts
+user_router.post("/link/twitter", validate_token, link_twitter);
+user_router.post("/link/steam", validate_token, link_steam);
+
+// steam
+user_router.get("/steam/:steam_id", get_steam_stats);
 
 export default user_router;

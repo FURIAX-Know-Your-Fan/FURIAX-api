@@ -66,6 +66,58 @@ class TweetRequest(BaseModel):
     screen_name: str
     local_id: str
 
+@app.get("/tweets/all")
+async def get_all_tweets():
+    all_tweets = []
+    users = await user_collection.find().to_list()
+
+    for user in users:
+        if not user["twitter_account"]:
+            logger.warning(f"Usuário {user['_id']} não possui conta do Twitter")
+            continue
+
+        logger.info(f"Buscando tweets para o usuário {user['twitter_account']}")
+        screen_name = user["twitter_account"]
+        local_id = str(user["_id"])
+
+        user_data = await client.get_user_by_screen_name(screen_name)
+        user_id = user_data.id
+
+        tweets = await client.get_user_tweets(user_id=user_id, tweet_type="Tweets", count=10)
+        tweets_data = []
+
+        for tweet in tweets:
+            tweet_data = {
+                "id": tweet.id,
+                "text": tweet.text,
+                "created_at": tweet.created_at.isoformat() if isinstance(tweet.created_at, datetime) else str(tweet.created_at),
+                "retweet_count": tweet.retweet_count,
+                "favorite_count": tweet.favorite_count
+            }
+            tweets_data.append(tweet_data)
+
+        mongo_doc = {
+            "screen_name": screen_name,
+            "tweets": tweets_data,
+            "updated_at": datetime.utcnow().isoformat()
+        }
+
+        try:
+            collection.update_one(
+                {"user_id": ObjectId(local_id)},
+                {"$set": mongo_doc},
+                upsert=True
+            )
+            logger.info(f"Tweets salvos em um único documento para o usuário {screen_name}")
+        except Exception as e:
+            logger.error(f"Erro ao salvar tweets no MongoDB: {e}")
+            return {"error": str(e)}
+
+        all_tweets.append(mongo_doc)
+
+    return {"message": "Tweets salvos com sucesso", "count": len(all_tweets), "tweets": all_tweets}
+
+
 @app.post("/tweets/")
 async def get_user_tweets(data: TweetRequest):
     screen_name = data.screen_name
@@ -130,7 +182,7 @@ async def generate_users_score():
         logger.info(f"Calculando score para o usuário {user['twitter_account']}")
 
         tweets = await collection.find_one({"user_id": user["_id"]})
-        if not tweets:
+        if len(tweets["tweets"]) == 0:
             logger.warning(f"Nenhum tweet encontrado para o usuário {user['twitter_account']}")
             continue
         
@@ -153,7 +205,7 @@ async def generate_users_score():
             
             # Requisição POST para a API do Ollama
             response = requests.post(
-                "https://d232-2804-14c-65d6-419e-00-1b94.ngrok-free.app/api/generate",
+                "https://ab83-2804-14c-65d6-419e-00-1b94.ngrok-free.app/api/generate",
                 data=json.dumps(payload),  # Convertendo o payload para JSON
                 headers=headers
             )
