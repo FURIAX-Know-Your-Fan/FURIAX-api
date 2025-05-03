@@ -8,6 +8,7 @@ import router from "./router/Router";
 import cookieParser from "cookie-parser";
 import cron from "node-cron";
 import { trigger_retrive_user_tweets } from "./func/trigger_retrive_user_tweets";
+import { create_base_admin } from "./func/create_base_admin";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -40,6 +41,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api", router);
 
 connect_db();
+
+create_base_admin();
 
 // cron.schedule("* * * * *", async () => {
 //   console.log("Executando tarefa agendada a cada 5 minutos");
